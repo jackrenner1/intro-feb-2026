@@ -35,6 +35,7 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
+
 app.MapDefaultEndpoints(); // the health checks and all that.
 app.Run();
 
