@@ -3,24 +3,53 @@
 
 namespace Banking.Domain;
 
-public class Account
+public class Account(ICalculateBonusesForAccounts _bonusCalculator)
 {
     private decimal _currentBalance = 5000M;
 
-    public int Balance { get; private set; }
+    //private ICalculateBonusesForAccounts _calculateBonusesForAccounts;
 
-    public void Deposit(decimal amountToDeposit)
+    //public Account(ICalculateBonusesForAccounts calc)
+    //{
+    //    _calculateBonusesForAccounts = calc;
+    //}
+
+    public void Deposit(TransactionAmount amountToDeposit)
     {
-        _currentBalance += amountToDeposit;
+        // if the amountToDeposit is 0 or less, throw an exception - abnormal end.
+        //var bonusCalculator = new StandardBonusCalculator(); // this is a real, concrete thing. 
+        // "new is glue"
+        // If, and only if the bonus calculator throws an exception - send a notifcation to some other service,
+        // add zero to the balance - and the notification 
+        _currentBalance += amountToDeposit + _bonusCalculator.CalculateBonusForDeposit(_currentBalance,amountToDeposit);
     }
 
     public decimal GetBalance()
     {
-        return _currentBalance; // Fake. Bs. Slime. 
+
+        return _currentBalance;
     }
 
-    public void Withdraw(decimal amountToWithdraw)
+    // Primitive Obsession 
+    // You can call this with any decimal value and it will work. 
+    public void Withdraw(TransactionAmount amountToWithdraw)
     {
-       _currentBalance -= amountToWithdraw;
+
+        if (WouldCauseOverdraft(amountToWithdraw))
+        {
+            // exit with an exception - abnormal end.
+            throw new OverdraftNotAllowedException();
+        }
+        _currentBalance -= amountToWithdraw;
+
+
     }
+
+    private bool WouldCauseOverdraft(decimal amountToWithdraw)
+    {
+        return amountToWithdraw > _currentBalance;
+    }
+
 }
+
+public class OverdraftNotAllowedException : ArgumentOutOfRangeException { }
